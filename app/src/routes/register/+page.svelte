@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
-	import type { PageData, ActionData } from './$types';
+	import type { ActionData } from './$types';
 	
 	// shadcn/ui components
 	import Card from '$lib/components/ui/card.svelte';
@@ -10,7 +10,6 @@
 	// Lucide icons
 	import { Bookmark, Mail, Lock, ArrowRight, Loader2 } from 'lucide-svelte';
 
-	export let data: PageData;
 	export let form: ActionData;
 	
 	let isSubmitting = false;
