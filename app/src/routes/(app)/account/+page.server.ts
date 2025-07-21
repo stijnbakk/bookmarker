@@ -18,6 +18,6 @@ export const actions: Actions = {
 		}
 		
 		await event.locals.supabase.auth.signOut();
-		return redirect(302, '/login');
+		return redirect(302, '/');
 	},
 };

@@ -2,8 +2,9 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
+	// If user is already logged in, redirect to feed
 	if (event.locals.session) {
-		return redirect(302, '/account');
+		return redirect(302, '/feed');
 	}
 	return { session: event.locals.session };
 };
@@ -31,6 +32,6 @@ export const actions: Actions = {
 			return fail(400, { message: error.message });
 		}
 
-		return redirect(302, '/account');
+		return redirect(302, '/feed');
 	}
 };
