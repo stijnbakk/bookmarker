@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { Pin } from '$lib/types';
-import { isPinterestUrl, scrapePinterestPin, normalizePinterestUrl } from '$lib/pinterest';
+import { isPinterestUrl, scrapePinterestPin, normalizePinterestUrl, expandShortenedUrl } from '$lib/pinterest';
 import { downloadAndStoreImage } from '$lib/imageStorage';
 
 export const load: PageServerLoad = async (event) => {
@@ -55,6 +55,31 @@ export const actions: Actions = {
 		// Check if it's a Pinterest URL and scrape if it is
 		if (isPinterestUrl(sourceUrl)) {
 			try {
+				// For pin.it URLs, show a more helpful error message if expansion fails
+				const parsedUrl = new URL(sourceUrl);
+				if (parsedUrl.hostname === 'pin.it') {
+					console.log('Detected pin.it URL, attempting to expand:', sourceUrl);
+					const expandedUrl = await expandShortenedUrl(sourceUrl);
+					
+					// Check if expansion resulted in an API redirect URL
+					if (expandedUrl.includes('api.pinterest.com/url_shortener')) {
+						return fail(400, { 
+							message: 'Shortened Pinterest URLs are not fully supported. Please open the pin.it URL in your browser, wait for it to redirect, then copy the full Pinterest URL (pinterest.com/pin/...) and try again.',
+							debug: `The URL expanded to: ${expandedUrl}` 
+						});
+					}
+					
+					// Check if expansion failed completely
+					if (expandedUrl === sourceUrl) {
+						return fail(400, { 
+							message: 'Unable to expand shortened Pinterest URL. Please try using the full Pinterest URL instead.', 
+							debug: `Original: ${sourceUrl}, Expanded: ${expandedUrl}` 
+						});
+					}
+					
+					console.log('Successfully expanded:', { original: sourceUrl, expanded: expandedUrl });
+				}
+
 				const scrapedData = await scrapePinterestPin(sourceUrl);
 				
 				if (scrapedData.success && (scrapedData.imageUrl || scrapedData.imageBlob)) {
