@@ -17,6 +17,8 @@ Technical debt
 - [ ] Service to screenshot web pages
 - [ ] Service to crawl web page and extract content
 - [ ] Service that auto-tags content
+- [ ] Vibe coding tool that auto makes tickets and splits them up into workable stories
+- [ ] Docs to explain how to develop and everything the app
 - [ ]
 
 Dump
