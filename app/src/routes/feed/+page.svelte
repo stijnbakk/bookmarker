@@ -2,6 +2,16 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import type { PageData, ActionData } from './$types';
+	
+	// shadcn/ui components
+	import Card from '$lib/components/ui/card.svelte';
+	import Button from '$lib/components/ui/button.svelte';
+	import Input from '$lib/components/ui/input.svelte';
+	import Textarea from '$lib/components/ui/textarea.svelte';
+	import Badge from '$lib/components/ui/badge.svelte';
+	
+	// Lucide icons
+	import { Bookmark, ExternalLink, Calendar, AlertTriangle, CheckCircle, User, Loader2, Camera, Plus } from 'lucide-svelte';
 
 	export let data: PageData;
 	export let form: ActionData;
@@ -23,11 +33,10 @@
 			return (
 				hostname === 'pinterest.com' ||
 				hostname === 'www.pinterest.com' ||
-				hostname === 'pin.it' || // Handle shortened URLs
+				hostname === 'pin.it' ||
 				hostname.endsWith('.pinterest.com') ||
-				// Handle international Pinterest domains
-				/^[a-z]{2}\.pinterest\.com$/.test(hostname) || // like nl.pinterest.com
-				hostname.match(/^pinterest\.[a-z]{2,}$/) // like pinterest.co.uk
+				/^[a-z]{2}\.pinterest\.com$/.test(hostname) ||
+				hostname.match(/^pinterest\.[a-z]{2,}$/)
 			);
 		} catch {
 			return false;
@@ -49,30 +58,35 @@
 	<title>Feed - Bookmarker</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-background">
 	<!-- Header -->
-	<div class="bg-white shadow">
-		<div class="max-w-4xl mx-auto px-4 py-6">
-			<div class="flex justify-between items-center">
-				<h1 class="text-3xl font-bold text-gray-900">Your Bookmarks</h1>
-				<a 
-					href="/account" 
-					class="text-sm text-indigo-600 hover:text-indigo-500"
-				>
+	<header class="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
+		<div class="max-w-2xl mx-auto px-4 py-4">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center space-x-2">
+					<Bookmark class="w-6 h-6 text-primary" />
+					<h1 class="text-2xl font-bold text-foreground">Bookmarks</h1>
+				</div>
+				<Button href="/account" variant="ghost" size="sm">
+					<User class="w-4 h-4 mr-2" />
 					Account
-				</a>
+				</Button>
 			</div>
 		</div>
-	</div>
+	</header>
 
-	<div class="max-w-4xl mx-auto px-4 py-8">
-		<!-- Add Pin Form -->
-		<div class="bg-white rounded-lg shadow p-6 mb-8">
-			<h2 class="text-lg font-medium text-gray-900 mb-4">Add New Bookmark</h2>
+	<main class="max-w-2xl mx-auto px-4 py-8 space-y-8">
+		<!-- Add Bookmark Form -->
+		<Card class="p-6">
+			<div class="flex items-center space-x-2 mb-4">
+				<Plus class="w-5 h-5 text-muted-foreground" />
+				<h2 class="text-lg font-semibold">Add New Bookmark</h2>
+			</div>
+			
 			<form 
 				method="POST" 
 				action="?/addPin" 
-				use:enhance={({ formData }) => {
+				use:enhance={() => {
 					isSubmitting = true;
 					return async ({ result }) => {
 						isSubmitting = false;
@@ -82,147 +96,147 @@
 						}
 					};
 				}}
+				class="space-y-4"
 			>
-				<div class="space-y-4">
-					<div>
-						<label for="source_url" class="block text-sm font-medium text-gray-700 mb-2">
-							URL
-						</label>
-						<textarea
-							id="source_url"
-							name="source_url"
-							bind:value={sourceUrl}
-							on:keydown={handleKeydown}
-							placeholder="Paste your bookmark URL here..."
-							rows="2"
-							required
-							class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 resize-none"
-						></textarea>
-					</div>
-					<div>
-						<label for="note" class="block text-sm font-medium text-gray-700 mb-2">
-							Note (optional)
-						</label>
-						<input
-							type="text"
-							id="note"
-							name="note"
-							bind:value={note}
-							placeholder="Add a note about this bookmark..."
-							class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-						/>
-					</div>
-					<button
-						type="submit"
-						disabled={!sourceUrl.trim() || isSubmitting}
-						class="w-full sm:w-auto px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-					>
-						{#if isSubmitting}
-							<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-							</svg>
-							{#if isPinterestUrl(sourceUrl)}
-								<span>Scraping Pinterest...</span>
-							{:else}
-								<span>Adding...</span>
-							{/if}
-						{:else}
-							<span>Add Bookmark</span>
-						{/if}
-					</button>
-					
-					{#if sourceUrl && isPinterestUrl(sourceUrl)}
-						{#if sourceUrl.includes('pin.it')}
-							<div class="mt-2 text-sm text-yellow-600 flex items-center space-x-1">
-								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.732 15c-.77.833.192 2.5 1.732 2.5z" />
-								</svg>
-								<span>Shortened Pinterest URL detected - will try to expand, but full URLs work better!</span>
-							</div>
-						{:else}
-							<div class="mt-2 text-sm text-green-600 flex items-center space-x-1">
-								<svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-									<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-								</svg>
-								<span>Pinterest URL detected - image will be scraped!</span>
-							</div>
-						{/if}
-					{/if}
+				<div class="space-y-2">
+					<label for="source_url" class="text-sm font-medium text-foreground">
+						URL
+					</label>
+					<Textarea
+						id="source_url"
+						name="source_url"
+						bind:value={sourceUrl}
+						on:keydown={handleKeydown}
+						placeholder="Paste your bookmark URL here..."
+						rows="2"
+						required
+						class="resize-none"
+					/>
 				</div>
+
+				<div class="space-y-2">
+					<label for="note" class="text-sm font-medium text-foreground">
+						Note <span class="text-muted-foreground">(optional)</span>
+					</label>
+					<Input
+						id="note"
+						name="note"
+						bind:value={note}
+						placeholder="Add a note about this bookmark..."
+					/>
+				</div>
+
+				<!-- Pinterest URL Detection -->
+				{#if sourceUrl && isPinterestUrl(sourceUrl)}
+					{#if sourceUrl.includes('pin.it')}
+						<div class="flex items-center space-x-2 text-sm text-amber-600 bg-amber-50 p-3 rounded-md">
+							<AlertTriangle class="w-4 h-4 flex-shrink-0" />
+							<span>Shortened Pinterest URL detected - will try to expand, but full URLs work better!</span>
+						</div>
+					{:else}
+						<div class="flex items-center space-x-2 text-sm text-green-600 bg-green-50 p-3 rounded-md">
+							<CheckCircle class="w-4 h-4 flex-shrink-0" />
+							<span>Pinterest URL detected - image will be scraped!</span>
+						</div>
+					{/if}
+				{/if}
+
+				<Button type="submit" disabled={!sourceUrl.trim() || isSubmitting} class="w-full">
+					{#if isSubmitting}
+						<Loader2 class="w-4 h-4 mr-2 animate-spin" />
+						{#if isPinterestUrl(sourceUrl)}
+							Scraping Pinterest...
+						{:else}
+							Adding...
+						{/if}
+					{:else}
+						Add Bookmark
+					{/if}
+				</Button>
 			</form>
 			
 			{#if form?.message}
-				<div class="mt-4 text-sm {form.success ? 'text-green-600' : 'text-red-600'}">
-					{form.message}
+				<div class="mt-4 p-3 rounded-md text-sm {form.success ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}">
+					<p>{form.message}</p>
+					{#if form?.debug}
+						<p class="mt-2 text-xs font-mono text-muted-foreground">{form.debug}</p>
+					{/if}
 				</div>
 			{/if}
-		</div>
+		</Card>
 
-		<!-- Pins Feed -->
+		<!-- Bookmarks Feed -->
 		<div class="space-y-6">
 			{#if data.pins.length === 0}
-				<div class="text-center py-12">
-					<div class="text-gray-400 mb-4">
-						<svg class="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-						</svg>
+				<Card class="p-12 text-center">
+					<div class="text-muted-foreground mb-4">
+						<Bookmark class="w-16 h-16 mx-auto opacity-50" />
 					</div>
-					<h3 class="text-lg font-medium text-gray-900 mb-2">No bookmarks yet</h3>
-					<p class="text-gray-600">Add your first bookmark using the form above!</p>
-				</div>
+					<h3 class="text-xl font-semibold text-foreground mb-2">No bookmarks yet</h3>
+					<p class="text-muted-foreground">Add your first bookmark using the form above!</p>
+				</Card>
 			{:else}
 				{#each data.pins as pin}
-					<div class="bg-white rounded-lg shadow hover:shadow-md transition-shadow overflow-hidden">
+					<Card class="overflow-hidden hover:shadow-lg transition-shadow duration-200">
 						{#if pin.image}
-							<div class="aspect-w-16 aspect-h-9 bg-gray-200">
+							<div class="aspect-video bg-muted overflow-hidden">
 								<img 
 									src={pin.image} 
 									alt="Pinterest pin" 
-									class="w-full h-48 object-cover"
+									class="w-full h-full object-cover"
 									loading="lazy"
 								/>
 							</div>
 						{/if}
-						<div class="p-6">
-							<div class="flex justify-between items-start mb-3">
-								<div class="flex-1">
-									<a 
-										href={pin.source_url}
-										target="_blank"
-										rel="noopener noreferrer"
-										class="text-indigo-600 hover:text-indigo-500 font-medium break-all"
-									>
+						
+						<div class="p-6 space-y-4">
+							<!-- URL and Note -->
+							<div class="space-y-2">
+								<a 
+									href={pin.source_url}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center text-primary hover:text-primary/80 font-medium break-all group"
+								>
+									<span class="underline underline-offset-2 decoration-primary/30 group-hover:decoration-primary/60">
 										{pin.source_url}
-									</a>
-									{#if pin.note}
-										<p class="text-gray-700 mt-2">{pin.note}</p>
-									{/if}
-								</div>
+									</span>
+									<ExternalLink class="w-3 h-3 ml-1 flex-shrink-0 opacity-60" />
+								</a>
+								
+								{#if pin.note}
+									<p class="text-foreground leading-relaxed">{pin.note}</p>
+								{/if}
 							</div>
-							<div class="flex justify-between items-center text-xs text-gray-500">
-								<div class="flex items-center space-x-2">
-									<span>ID: {pin.id}</span>
+
+							<!-- Metadata -->
+							<div class="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
+								<div class="flex items-center space-x-3">
+									<div class="flex items-center space-x-1">
+										<Calendar class="w-3 h-3" />
+										<time datetime={pin.created_at}>
+											{new Date(pin.created_at).toLocaleDateString('en-US', {
+												year: 'numeric',
+												month: 'short',
+												day: 'numeric'
+											})}
+										</time>
+									</div>
+									
 									{#if pin.image}
-										<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-											📷 Pinterest
-										</span>
+										<Badge variant="success" class="text-xs">
+											<Camera class="w-3 h-3 mr-1" />
+											Pinterest
+										</Badge>
 									{/if}
 								</div>
-								<time datetime={pin.created_at}>
-									{new Date(pin.created_at).toLocaleDateString('en-US', {
-										year: 'numeric',
-										month: 'short',
-										day: 'numeric',
-										hour: '2-digit',
-										minute: '2-digit'
-									})}
-								</time>
+								
+								<span class="text-xs font-mono">{pin.id.slice(-8)}</span>
 							</div>
 						</div>
-					</div>
+					</Card>
 				{/each}
 			{/if}
 		</div>
-	</div>
+	</main>
 </div>
